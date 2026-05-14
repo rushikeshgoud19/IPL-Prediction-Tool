@@ -410,3 +410,49 @@ body, html {
     letter-spacing: 0.5px;
     line-height: 1.4;
 }
+
+/* Responsiveness & Refined UI */
+@media (max-width: 1200px) {
+  .main-layout {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .sidebar {
+    width: 100%;
+    order: 2;
+  }
+  .canvas-container {
+    height: 500px;
+    order: 1;
+    flex: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .glass-header {
+    padding: 15px 20px;
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  .scheduler-widget {
+    text-align: center;
+    width: 100%;
+  }
+  .prediction-value {
+    font-size: 2.5rem;
+  }
+}
+
+.glass-panel:hover {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(20, 20, 35, 0.7);
+  transform: translateY(-2px);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.pre-match-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(100, 255, 218, 0.2);
+}
+
