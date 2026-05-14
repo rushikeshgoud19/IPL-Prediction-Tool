@@ -4,3 +4,4 @@ backend/data/raw_csvs/
 *.pt
 __pycache__/
 .DS_Store
+.claude/
