@@ -210,6 +210,57 @@ body {
   font-size: 12px;
 }
 
+.match-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.series-name {
+  font-size: 11px;
+  color: var(--gold);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.venue-name {
+  font-size: 10px;
+  color: var(--gray);
+}
+
+.last-ball-info {
+  margin-top: 16px;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(204, 0, 0, 0.2), rgba(204, 0, 0, 0.1));
+  border-radius: 8px;
+  border: 1px solid rgba(204, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.last-ball-label {
+  font-size: 10px;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.last-ball-text {
+  font-size: 13px;
+  color: var(--white);
+  font-weight: 600;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .teams-container {
   display: flex;
   justify-content: space-between;

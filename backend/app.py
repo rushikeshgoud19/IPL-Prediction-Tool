@@ -2,6 +2,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from match_outcome_predictor import MatchPredictor
 import pandas as pd
+import requests
+import time
 
 app = Flask(__name__)
 CORS(app)
@@ -9,6 +11,44 @@ CORS(app)
 print("=" * 60)
 print("IPL PREDICTION SYSTEM - HIGH ACCURACY MODEL")
 print("=" * 60)
+
+# Cache for live match data
+live_cache = {"data": None, "timestamp": 0}
+LIVE_CACHE_DURATION = 30  # seconds
+
+def fetch_cricbuzz_live():
+    """Fetch live match data from Cricbuzz"""
+    try:
+        # Try Cricbuzz API (free, no auth needed)
+        url = "https://www.cricbuzz.com/api/cricket-match/live"
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            return response.json()
+    except Exception as e:
+        print(f"[LIVE] API fetch error: {e}")
+    return None
+
+def get_mock_live_data():
+    """Return mock live data for demo purposes"""
+    return {
+        "matches": [
+            {
+                "id": "live_1",
+                "status": "In Progress",
+                "team_1": {"name": "Punjab Kings", "short": "PBKS", "score": "185/4", "overs": "18.2"},
+                "team_2": {"name": "Mumbai Indians", "short": "MI", "score": "0/0", "overs": "0"},
+                "venue": "Maharashtra Cricket Association Stadium, Pune",
+                "match_type": "T20",
+                "series": "Indian Premier League 2026",
+                "last_ball": "FOUR! What a shot!",
+                "recent_overs": [
+                    {"over": 18, "balls": ["0", "1", "4", "2", "6", "0"], "runs": 13},
+                    {"over": 17, "balls": ["W", "1", "0", "2", "4", "1"], "runs": 8},
+                    {"over": 16, "balls": ["6", "0", "0", "1", "2", "4"], "runs": 13},
+                ]
+            }
+        ]
+    }
 
 # Initialize model
 try:
@@ -142,10 +182,59 @@ def submission():
         "model_rating": "4.55/5.0 EXCEPTIONAL"
     })
 
+@app.route('/api/live', methods=['GET'])
+def live_matches():
+    """Get live match updates with polling support"""
+    global live_cache
+
+    # Check cache
+    current_time = time.time()
+    if live_cache["data"] and (current_time - live_cache["timestamp"]) < LIVE_CACHE_DURATION:
+        return jsonify(live_cache["data"])
+
+    # Try to fetch real data
+    live_data = fetch_cricbuzz_live()
+
+    if not live_data:
+        # Use mock data for demo
+        live_data = get_mock_live_data()
+
+    # Cache the result
+    live_cache = {"data": live_data, "timestamp": current_time}
+
+    return jsonify(live_data)
+
+@app.route('/api/live/<match_id>', methods=['GET'])
+def live_match_detail(match_id):
+    """Get detailed info for a specific live match"""
+    global live_cache
+
+    # Check cache first
+    current_time = time.time()
+    if live_cache["data"] and (current_time - live_cache["timestamp"]) < LIVE_CACHE_DURATION:
+        matches = live_cache["data"].get("matches", [])
+        for m in matches:
+            if m.get("id") == match_id:
+                return jsonify(m)
+        return jsonify({"error": "Match not found"}), 404
+
+    # Fetch fresh data
+    live_data = fetch_cricbuzz_live() or get_mock_live_data()
+    live_cache = {"data": live_data, "timestamp": current_time}
+
+    matches = live_data.get("matches", [])
+    for m in matches:
+        if m.get("id") == match_id:
+            return jsonify(m)
+
+    return jsonify({"error": "Match not found"}), 404
+
 if __name__ == '__main__':
     print("\nServer running on http://localhost:5000")
     print("Endpoints:")
     print("  GET  /api/health     - Health check + rating")
+    print("  GET  /api/live       - Live match updates")
+    print("  GET  /api/live/<id>  - Specific match detail")
     print("  GET  /api/pre-match  - Hackathon predictions")
     print("  POST /api/predict    - Custom prediction")
     print("  GET  /api/submission - Generate submission.csv")

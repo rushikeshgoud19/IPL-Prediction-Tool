@@ -71,6 +71,11 @@ function ScoreCard({ liveData }) {
         <span className="match-format">T20</span>
       </div>
 
+      <div className="match-info">
+        <span className="series-name">{liveData?.series || 'IPL 2026'}</span>
+        <span className="venue-name">{liveData?.venue || ''}</span>
+      </div>
+
       <div className="teams-container">
         <div className="team-section">
           <div className="team-logo">{liveData?.batting_team?.charAt(0) || 'A'}</div>
@@ -87,7 +92,7 @@ function ScoreCard({ liveData }) {
             Over {liveData?.over || 0.0}
           </div>
           <div className="run-rate">
-            CRR: {liveData?.current_run_rate?.toFixed(2) || '0.00'}
+            CRR: {liveData?.current_run_rate || '0.00'}
           </div>
         </div>
 
@@ -96,6 +101,13 @@ function ScoreCard({ liveData }) {
           <div className="team-name">{liveData?.bowling_team || 'Team B'}</div>
         </div>
       </div>
+
+      {liveData?.last_ball && (
+        <div className="last-ball-info">
+          <span className="last-ball-label">Last Ball:</span>
+          <span className="last-ball-text">{liveData.last_ball}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -209,22 +221,6 @@ function getOutcomeBarColor(outcome) {
   }
 }
 
-// Commentary Component
-function Commentary({ commentary }) {
-  return (
-    <div className="commentary-panel">
-      <div className="commentary-header">Commentary</div>
-      <div className="commentary-list">
-        {commentary?.slice(-10).reverse().map((c, idx) => (
-          <div key={idx} className="commentary-item">
-            <span className="commentary-over">{c.over}</span>
-            <span className="commentary-text">{c.text}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // Stats Panel
 function StatsPanel({ liveData }) {
@@ -234,19 +230,23 @@ function StatsPanel({ liveData }) {
       <div className="stats-grid">
         <div className="stat-item">
           <span className="stat-label">Run Rate</span>
-          <span className="stat-value">{liveData?.current_run_rate?.toFixed(2) || '0.00'}</span>
+          <span className="stat-value">{liveData?.current_run_rate || '0.00'}</span>
         </div>
         <div className="stat-item">
           <span className="stat-label">Batsman SR</span>
-          <span className="stat-value">{liveData?.batsman_strike_rate?.toFixed(0) || '0'}</span>
+          <span className="stat-value">{liveData?.batsman_strike_rate || '0'}</span>
         </div>
         <div className="stat-item">
           <span className="stat-label">Bowler Eco</span>
-          <span className="stat-value">{liveData?.bowler_economy?.toFixed(1) || '0.0'}</span>
+          <span className="stat-value">{liveData?.bowler_economy || '0.0'}</span>
         </div>
         <div className="stat-item">
           <span className="stat-label">Powerplay</span>
           <span className="stat-value">{liveData?.is_powerplay ? 'Yes' : 'No'}</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Death Overs</span>
+          <span className="stat-value">{liveData?.is_death ? 'Yes' : 'No'}</span>
         </div>
       </div>
     </div>
@@ -322,7 +322,6 @@ export default function App() {
   const [confidence, setConfidence] = useState(0);
   const [probabilities, setProbabilities] = useState({});
   const [recentOvers, setRecentOvers] = useState([]);
-  const [commentary, setCommentary] = useState([]);
   const [preMatchData, setPreMatchData] = useState([]);
   const [activeTab, setActiveTab] = useState('live');
 
@@ -334,19 +333,73 @@ export default function App() {
       .catch(err => console.error('Pre-match fetch error:', err));
   }, []);
 
-  // Simulate live data (since no actual live feed)
+  // Fetch live match data from backend
+  useEffect(() => {
+    const fetchLiveData = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/live');
+        const data = await response.json();
+
+        if (data.matches && data.matches.length > 0) {
+          const match = data.matches[0]; // First live match
+
+          // Extract runs and wickets from score
+          const parseScore = (score) => {
+            if (!score) return { runs: 0, wickets: 0 };
+            const parts = score.split('/');
+            return {
+              runs: parseInt(parts[0]) || 0,
+              wickets: parseInt(parts[1]) || 0
+            };
+          };
+
+          const { runs, wickets } = parseScore(match.team_1.score);
+          const over = parseFloat(match.team_1.overs || '0');
+
+          setLiveData({
+            match: `${match.team_1.name} vs ${match.team_2.name}`,
+            status: 'LIVE',
+            batting_team: match.team_1.name,
+            bowling_team: match.team_2.name,
+            runs,
+            wickets,
+            over,
+            current_run_rate: over > 0 ? ((runs / over) * 6).toFixed(2) : '0.00',
+            batsman_strike_rate: 130,
+            bowler_economy: 8.0,
+            is_powerplay: over <= 6,
+            is_death: over >= 16,
+            venue: match.venue,
+            series: match.series,
+            last_ball: match.last_ball
+          });
+
+          // Update recent overs from live data
+          if (match.recent_overs) {
+            setRecentOvers(match.recent_overs.map(o => ({
+              overNumber: o.over,
+              balls: o.balls,
+              runs: o.runs
+            })));
+          }
+        }
+      } catch (err) {
+        console.error('Live fetch error:', err);
+      }
+    };
+
+    // Initial fetch
+    fetchLiveData();
+
+    // Poll every 30 seconds
+    const pollInterval = setInterval(fetchLiveData, 30000);
+
+    return () => clearInterval(pollInterval);
+  }, []);
+
+  // Simulate prediction updates (keep the AI prediction logic)
   useEffect(() => {
     const outcomes = ['Dot', '1', '2', '4', '6', 'Wicket'];
-    const weights = [0.35, 0.25, 0.1, 0.15, 0.1, 0.05];
-
-    const generateOutcome = () => {
-      let random = Math.random();
-      for (let i = 0; i < weights.length; i++) {
-        random -= weights[i];
-        if (random <= 0) return outcomes[i];
-      }
-      return outcomes[0];
-    };
 
     const generateProbs = () => {
       const probs = {};
@@ -358,73 +411,13 @@ export default function App() {
       return probs;
     };
 
-    let ballCount = 0;
-    let runs = 0;
-    let wickets = 0;
-    let currentOverBalls = [];
-
     const interval = setInterval(() => {
-      const outcome = generateOutcome();
       const probs = generateProbs();
-
-      let ballRuns = outcome === 'Wicket' ? 0 : parseInt(outcome) || 0;
-      runs += ballRuns;
-      if (outcome === 'Wicket') wickets++;
-      ballCount++;
-
-      const over = Math.floor(ballCount / 6) + 1;
-      const ballInOver = (ballCount % 6) + 1;
-      const currentOver = ballInOver / 6;
-      const totalOver = over - 1 + currentOver;
-
-      currentOverBalls.push(outcome);
-
-      // Complete over
-      if (ballCount % 6 === 0) {
-        const overRuns = currentOverBalls.reduce((sum, b) => {
-          if (b === 'Wicket') return sum;
-          return sum + (parseInt(b) || 0);
-        }, 0);
-
-        setRecentOvers(prev => {
-          const newOvers = [...prev, {
-            overNumber: over,
-            balls: [...currentOverBalls],
-            runs: overRuns
-          }];
-          return newOvers.slice(-10);
-        });
-
-        currentOverBalls = [];
-      }
-
       const bestProb = Object.entries(probs).sort((a, b) => b[1] - a[1])[0];
-
-      setLiveData({
-        match: 'Live Match',
-        status: 'LIVE',
-        batting_team: 'Punjab Kings',
-        bowling_team: 'Mumbai Indians',
-        runs,
-        wickets,
-        over: totalOver.toFixed(1),
-        current_run_rate: (runs / (ballCount / 6) * 6).toFixed(2) || 0,
-        batsman_strike_rate: (ballRuns * 100).toFixed(0) || 130,
-        bowler_economy: (ballRuns * 6).toFixed(1) || 8.0,
-        is_powerplay: ballCount <= 36,
-        is_death: ballCount >= 90
-      });
-
       setPrediction(bestProb[0]);
       setConfidence(bestProb[1]);
       setProbabilities(probs);
-
-      setCommentary(prev => [...prev, {
-        over: `Ov ${over}.${ballInOver}`,
-        text: getCommentaryText(outcome, ballRuns)
-      }]);
-
-    }, 3000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -519,7 +512,6 @@ export default function App() {
                   confidence={confidence}
                   probabilities={probabilities}
                 />
-                <Commentary commentary={commentary} />
               </div>
             </div>
           </>
@@ -541,7 +533,6 @@ export default function App() {
               <h2>📜 Match History</h2>
             </div>
             <BallHistory recentOvers={recentOvers} />
-            <Commentary commentary={commentary} />
           </div>
         )}
       </main>
@@ -556,16 +547,4 @@ export default function App() {
       </footer>
     </div>
   );
-}
-
-function getCommentaryText(outcome, runs) {
-  const comments = {
-    'Dot': 'Dot ball. Maiden over building pressure.',
-    '1': `Single taken. ${runs} run.`,
-    '2': `Good running between wickets. ${runs} runs.`,
-    '4': `Boundary! That's a cracking shot! ${runs} runs.`,
-    '6': `SIX! Over the ropes! What a hit! ${runs} runs!`,
-    'Wicket': 'OUT! Bowled him! What a delivery!'
-  };
-  return comments[outcome] || `${runs} runs.`;
 }
