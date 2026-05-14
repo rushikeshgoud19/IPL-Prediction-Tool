@@ -48,47 +48,7 @@ live_match_state = {
     "recent_overs": []
 }
 
-# Example of how the state will look when live:
-mock_live_state = {
-    "match": "PBKS vs MI",
-    "venue": "Dharamshala",
-    "status": "LIVE",
-    "batting_team": "PBKS",
-    "bowling_team": "MI",
-    "over": 18.4,
-    "runs": 178,
-    "wickets": 4,
-    "current_run_rate": 9.5,
-    "batsman_strike_rate": 145.0,
-    "bowler_economy": 8.2,
-    "is_powerplay": 0,
-    "is_death": 1,
-    "delivery_type": "Yorker",
-    "last_prediction": {
-        "outcome": "1",
-        "probs": {"Dot": 10, "1": 45, "2": 20, "4": 15, "6": 5, "Wicket": 5},
-        "historical_context": "At this venue in the death overs (16-20), MI bowlers pitch 42% Yorkers. Given PBKS's current run rate of 9.5, a single is the highest probability."
-    },
-    "recent_overs": [
-        ["1", "Dot", "4", "1", "Wicket", "1"],
-        ["6", "2", "1", "Dot", "4", "1"]
-    ]
-}
-
-# Simulation removed. The dashboard will now wait for actual data or can be toggled to show the mock state.
-@app.route('/api/toggle-demo', methods=['POST'])
-def toggle_demo():
-    global live_match_state
-    if live_match_state["status"] == "AWAITING TOSS":
-        live_match_state = mock_live_state
-    else:
-        # Reset to pending
-        live_match_state = {
-            "match": "PBKS vs MI", "venue": "Dharamshala", "status": "AWAITING TOSS", "over": 0.0, "runs": 0, "wickets": 0,
-            "current_run_rate": 0.0, "last_prediction": {"outcome": "STANDBY", "probs": {}, "historical_context": "Match hasn't started yet."},
-            "recent_overs": []
-        }
-    return jsonify({"success": True})
+# Simulation routes removed to focus on real data and hackathon requirements.
 
 @app.route('/api/live', methods=['GET'])
 def get_live_state():
@@ -110,6 +70,8 @@ def get_pre_match():
         probs = match_predictor.predict_match(t['team_a'], t['team_b'], t['venue'])
         results.append({
             "match": t['label'],
+            "team_a": t['team_a'],
+            "team_b": t['team_b'],
             "predictions": {k: round(v * 100, 2) for k, v in probs.items()}
         })
     return jsonify(results)

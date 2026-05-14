@@ -114,10 +114,6 @@ export default function PredictionDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const toggleDemo = () => {
-    fetch('http://localhost:5000/api/toggle-demo', { method: 'POST' })
-      .catch(err => console.error("Toggle demo failed:", err));
-  };
 
   const getPredictionColorClass = (pred) => {
       if (pred === 'Wicket') return 'text-red';
@@ -205,19 +201,19 @@ export default function PredictionDashboard() {
                     <h4>{m.match}</h4>
                     <div className="prob-bars">
                         <div className="prob-row">
-                            <div className="bar-label"><span>Team A (Big)</span> <span>{m.predictions.A_big}%</span></div>
+                            <div className="bar-label"><span>{m.team_a} (Big)</span> <span>{m.predictions.A_big}%</span></div>
                             <div className="bar-container"><div className="bar-fill bg-a" style={{width: `${m.predictions.A_big}%`}}></div></div>
                         </div>
                         <div className="prob-row">
-                            <div className="bar-label"><span>Team A (Small)</span> <span>{m.predictions.A_small}%</span></div>
+                            <div className="bar-label"><span>{m.team_a} (Small)</span> <span>{m.predictions.A_small}%</span></div>
                             <div className="bar-container"><div className="bar-fill bg-a" style={{width: `${m.predictions.A_small}%`}}></div></div>
                         </div>
                         <div className="prob-row">
-                            <div className="bar-label"><span>Team B (Big)</span> <span>{m.predictions.B_big}%</span></div>
+                            <div className="bar-label"><span>{m.team_b} (Big)</span> <span>{m.predictions.B_big}%</span></div>
                             <div className="bar-container"><div className="bar-fill bg-b" style={{width: `${m.predictions.B_big}%`}}></div></div>
                         </div>
                         <div className="prob-row">
-                            <div className="bar-label"><span>Team B (Small)</span> <span>{m.predictions.B_small}%</span></div>
+                            <div className="bar-label"><span>{m.team_b} (Small)</span> <span>{m.predictions.B_small}%</span></div>
                             <div className="bar-container"><div className="bar-fill bg-b" style={{width: `${m.predictions.B_small}%`}}></div></div>
                         </div>
                     </div>
@@ -225,12 +221,9 @@ export default function PredictionDashboard() {
             ))}
           </div>
 
-          <button 
-            className="btn-simulate" 
-            onClick={toggleDemo}
-          >
-            {liveData && liveData.status === 'LIVE' ? 'STOP DEMO' : 'LOAD HISTORICAL DEMO DATA'}
-          </button>
+          <div className="system-notice">
+            <p>Live matching will automatically begin once the toss occurs at the venue.</p>
+          </div>
 
           <div className="agent-status">
             <h3>SYSTEM STATUS</h3>

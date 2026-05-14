@@ -394,3 +394,19 @@ body, html {
     text-align: left;
 }
 
+
+.system-notice {
+    background: rgba(100, 255, 218, 0.05);
+    border: 1px dashed rgba(100, 255, 218, 0.3);
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+.system-notice p {
+    margin: 0;
+    font-size: 11px;
+    color: #64ffda;
+    letter-spacing: 0.5px;
+    line-height: 1.4;
+}
