@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live IPL Prediction Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505;
+            color: #ffffff;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+        }
+        #header {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+            text-align: center;
+            z-index: 10;
+        }
+        h1 { margin: 0; font-size: 22px; color: #ff3366; letter-spacing: 2px; text-transform: uppercase; }
+        .subtitle { margin: 5px 0 0 0; font-size: 13px; color: #888; }
+        
+        /* Live Scoreboard Panel */
+        #scoreboard {
+            position: absolute;
+            top: 80px;
+            left: 30px;
+            background: rgba(15, 15, 20, 0.85);
+            padding: 20px 30px;
+            border-radius: 12px;
+            border-left: 4px solid #ff3366;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .score-title { color: #aaa; font-weight: bold; font-size: 14px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;}
+        .score-runs { font-size: 42px; font-weight: bold; color: white; display: inline-block;}
+        .score-overs { font-size: 20px; color: #00ffcc; margin-left: 15px; display: inline-block;}
+        .score-status { margin-top: 10px; font-size: 12px; background: #ff3366; padding: 3px 8px; border-radius: 4px; display: inline-block; font-weight: bold;}
+
+        /* Bottom Prediction Panel */
+        #ui-panel {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 15, 20, 0.85);
+            padding: 20px 40px;
+            border-radius: 12px;
+            border-top: 2px solid #333;
+            display: flex;
+            gap: 40px;
+            z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+        .stat-box { text-align: center; }
+        .stat-box span { display: block; font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 5px;}
+        .stat-box strong { font-size: 22px; color: #fff; }
+        
+        #prediction-container {
+            border-left: 1px solid #444;
+            padding-left: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 200px;
+        }
+        .pred-title { font-size: 12px; color: #aaa; text-transform: uppercase; }
+        #prediction-result { font-size: 28px; color: #00ffcc; font-weight: bold; margin: 5px 0; }
+        #prediction-conf { font-size: 14px; color: #ff3366; }
+        
+        /* Loading pulse */
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        .live-dot { display: inline-block; width: 8px; height: 8px; background-color: #fff; border-radius: 50%; margin-right: 6px; animation: pulse 1.5s infinite; }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Live IPL AI Prediction Engine</h1>
+        <p class="subtitle">Lead Developer: Kayala Rushikesh Goud | ID: 2025EB01872</p>
+    </div>
+
+    <!-- Live Scoreboard -->
+    <div id="scoreboard">
+        <div class="score-title">PBKS vs MI @ Dharamshala</div>
+        <div>
+            <div id="live-score" class="score-runs">178/4</div>
+            <div id="live-overs" class="score-overs">Overs: 18.4</div>
+        </div>
+        <div class="score-status"><span class="live-dot"></span><span id="live-status">LIVE MATCH</span></div>
+    </div>
+
+    <!-- Stats & Predictions -->
+    <div id="ui-panel">
+        <div style="display: flex; gap: 30px; align-items: center;">
+            <div class="stat-box">
+                <span>Run Rate</span>
+                <strong id="stat-rr">9.5</strong>
+            </div>
+            <div class="stat-box">
+                <span>Phase</span>
+                <strong id="stat-phase">Death</strong>
+            </div>
+            <div class="stat-box">
+                <span>Delivery Tracker</span>
+                <strong id="stat-delivery">Yorker</strong>
+            </div>
+        </div>
+        
+        <div id="prediction-container">
+            <div class="pred-title">Predicting Next Ball...</div>
+            <div id="prediction-result">Waiting</div>
+            <div id="prediction-conf">Engine Syncing...</div>
+        </div>
+    </div>
+
+    <!-- Three.js Visuals -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050505, 0.02);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const spotLight = new THREE.SpotLight(0xffffff, 1.5);
+        spotLight.position.set(0, 50, 0);
+        spotLight.angle = Math.PI/4;
+        scene.add(spotLight);
+
+        // Pitch
+        const pitchGeometry = new THREE.PlaneGeometry(10, 30);
+        const pitchMaterial = new THREE.MeshStandardMaterial({ color: 0x8B7355, roughness: 0.8 });
+        const pitch = new THREE.Mesh(pitchGeometry, pitchMaterial);
+        pitch.rotation.x = -Math.PI / 2;
+        scene.add(pitch);
+
+        // Grass
+        const grassGeometry = new THREE.PlaneGeometry(150, 150);
+        const grassMaterial = new THREE.MeshStandardMaterial({ color: 0x123512, roughness: 1.0 });
+        const grass = new THREE.Mesh(grassGeometry, grassMaterial);
+        grass.rotation.x = -Math.PI / 2;
+        grass.position.y = -0.01;
+        scene.add(grass);
+
+        // Stumps
+        const stumpMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        for(let i=0; i<3; i++) {
+            const stump1 = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.5, 16), stumpMaterial);
+            stump1.position.set(-0.5 + i*0.5, 0.75, 14);
+            scene.add(stump1);
+
+            const stump2 = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.5, 16), stumpMaterial);
+            stump2.position.set(-0.5 + i*0.5, 0.75, -14);
+            scene.add(stump2);
+        }
+
+        camera.position.set(0, 10, 28);
+        camera.lookAt(0, 0, 0);
+
+        let currentTrajectory = null;
+
+        function drawTrajectory(prediction) {
+            if (currentTrajectory) scene.remove(currentTrajectory);
+
+            const isWicket = prediction === 'Wicket';
+            const isSix = prediction === '6';
+            
+            const material = new THREE.LineBasicMaterial({
+                color: isSix ? 0x00ffcc : (isWicket ? 0xff3366 : 0xffff00),
+                linewidth: 4
+            });
+
+            const points = [];
+            points.push(new THREE.Vector3(0, 0.1, -14)); 
+            points.push(new THREE.Vector3(0, 0.1, 5));   
+
+            if (isSix) points.push(new THREE.Vector3(12, 18, 35)); 
+            else if (prediction === '4') points.push(new THREE.Vector3(25, 0.1, 25)); 
+            else if (isWicket) points.push(new THREE.Vector3(0, 0.5, 14)); 
+            else points.push(new THREE.Vector3(6, 2, 12)); 
+
+            const curve = new THREE.CatmullRomCurve3(points);
+            const geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(50));
+            
+            currentTrajectory = new THREE.Line(geometry, material);
+            scene.add(currentTrajectory);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            camera.position.x = Math.sin(Date.now() * 0.0003) * 6;
+            camera.lookAt(0, 0, 0);
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // 🔴 LIVE DASHBOARD POLLING 🔴
+        let lastBallId = null;
+
+        async function fetchLiveMatchData() {
+            try {
+                const response = await fetch('http://localhost:5000/api/live');
+                if (!response.ok) return;
+                const data = await response.json();
+                
+                // Update Scoreboard UI
+                document.getElementById('live-score').innerText = `${data.runs}/${data.wickets}`;
+                document.getElementById('live-overs').innerText = `Overs: ${data.over.toFixed(1)}`;
+                document.getElementById('live-status').innerText = data.status;
+                document.querySelector('.score-title').innerText = `${data.batting_team} vs ${data.bowling_team} @ ${data.venue}`;
+                
+                // Update Prediction Engine UI
+                document.getElementById('stat-rr').innerText = data.current_run_rate;
+                document.getElementById('stat-phase').innerText = data.is_death ? 'Death' : (data.is_powerplay ? 'Power' : 'Middle');
+                document.getElementById('stat-delivery').innerText = data.delivery_type;
+
+                // If a new ball was bowled, update the prediction!
+                if (data.last_prediction && data.ball_id !== lastBallId) {
+                    lastBallId = data.ball_id;
+                    const outcome = data.last_prediction.outcome;
+                    const conf = data.last_prediction.probs[outcome];
+                    
+                    document.getElementById('prediction-result').innerHTML = outcome;
+                    document.getElementById('prediction-result').style.color = outcome === 'Wicket' ? '#ff3366' : (outcome === '6' ? '#00ffcc' : '#fff');
+                    document.getElementById('prediction-conf').innerText = `${conf}% Confidence Model`;
+                    
+                    // Fire 3D Animation
+                    drawTrajectory(outcome);
+                }
+            } catch (err) {
+                document.getElementById('prediction-conf').innerText = "Connecting to Backend Server...";
+            }
+        }
+
+        // Poll the server every 1 second
+        setInterval(fetchLiveMatchData, 1000);
+        fetchLiveMatchData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+pandas
+scikit-learn
+ultralytics
+opencv-python
+numpy
+flask
+flask-cors
+xgboost
+scipy

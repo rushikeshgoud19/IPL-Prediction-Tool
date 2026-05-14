@@ -1,0 +1,6 @@
+venv/
+node_modules/
+backend/data/raw_csvs/
+*.pt
+__pycache__/
+.DS_Store
