@@ -30,7 +30,21 @@ class IPLPredictor:
         
         # Features: current run rate, bowler economy, batsman strike rate, innings phase
         X = df[['current_run_rate', 'bowler_economy', 'batsman_strike_rate', 'is_powerplay', 'is_death']]
-        y = df['outcome'] # 0: Dot, 1: 1, 2: 2, 4: 4, 6: 6, -1: Wicket
+        
+        # Clean up outcomes (Standardize to Dot, 1, 2, 3, 4, 6, Wicket)
+        def map_outcome(val):
+            val = str(val)
+            if val in ['Dot', '0', '0.0']: return 'Dot'
+            if val in ['Wicket', 'w', '-1']: return 'Wicket'
+            if val in ['1', '2', '3', '4', '6']: return val
+            if '1' in val: return '1'
+            if '2' in val: return '2'
+            if '3' in val: return '3'
+            if '4' in val: return '4'
+            if '6' in val: return '6'
+            return 'Dot' # Default to Dot for outliers like '7' or extras
+            
+        y = df['outcome'].apply(map_outcome)
         
         return X, y, sample_weights
 
