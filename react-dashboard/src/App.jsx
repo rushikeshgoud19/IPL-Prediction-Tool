@@ -63,49 +63,89 @@ function CricketPitch({ latestPrediction }) {
 }
 
 // Match Score Card Component (Hotstar style)
-function ScoreCard({ liveData }) {
+function ScoreCard({ liveData, matchInfo }) {
+  // Use real team names from matchInfo if available
+  const battingTeam = liveData?.batting_team || matchInfo?.batting_team || 'Team A';
+  const bowlingTeam = liveData?.bowling_team || matchInfo?.bowling_team || 'Team B';
+  const team1Name = matchInfo?.team_1 || battingTeam;
+  const team2Name = matchInfo?.team_2 || bowlingTeam;
+  const team1Short = team1Name.substring(0, 4).toUpperCase();
+  const team2Short = team2Name.substring(0, 4).toUpperCase();
+
   return (
     <div className="score-card">
       <div className="match-status-bar">
         <span className="live-indicator">🔴 LIVE</span>
         <span className="match-format">T20</span>
+        <span className="innings-badge">
+          {matchInfo?.innings ? `Innings ${matchInfo.innings}` : 'Pre-Match'}
+        </span>
       </div>
 
       <div className="match-info">
-        <span className="series-name">{liveData?.series || 'IPL 2026'}</span>
-        <span className="venue-name">{liveData?.venue || ''}</span>
+        <span className="series-name">{matchInfo?.series || 'IPL 2026'}</span>
+        <span className="venue-name">{matchInfo?.venue || ''}</span>
       </div>
 
       <div className="teams-container">
         <div className="team-section">
-          <div className="team-logo">{liveData?.batting_team?.charAt(0) || 'A'}</div>
-          <div className="team-name">{liveData?.batting_team || 'Team A'}</div>
+          <div className="team-logo">{team1Short.charAt(0)}</div>
+          <div className="team-name">{team1Name}</div>
+          <div className="team-short">{team1Short}</div>
         </div>
 
         <div className="score-section">
           <div className="main-score">
-            <span className="runs">{liveData?.runs || 0}</span>
+            <span className="runs">{matchInfo?.team_1_runs || liveData?.runs || 0}</span>
             <span className="separator">/</span>
-            <span className="wickets">{liveData?.wickets || 0}</span>
+            <span className="wickets">{matchInfo?.team_1_wickets || liveData?.wickets || 0}</span>
           </div>
           <div className="over-info">
-            Over {liveData?.over || 0.0}
+            Over {matchInfo?.team_1_overs || liveData?.over || 0.0}
           </div>
           <div className="run-rate">
-            CRR: {liveData?.current_run_rate || '0.00'}
+            CRR: {liveData?.current_run_rate || liveData?.run_rate || '0.00'}
           </div>
+        </div>
+
+        <div className="vs-divider">VS</div>
+
+        <div className="score-section">
+          <div className="main-score target">
+            <span className="runs">{matchInfo?.team_2_runs || 0}</span>
+            <span className="separator">/</span>
+            <span className="wickets">{matchInfo?.team_2_wickets || 0}</span>
+          </div>
+          <div className="over-info">
+            Over {matchInfo?.team_2_overs || 0.0}
+          </div>
+          {matchInfo?.target && (
+            <div className="target-info">
+              Target: {matchInfo.target}
+            </div>
+          )}
         </div>
 
         <div className="team-section">
-          <div className="team-logo">{liveData?.bowling_team?.charAt(0) || 'B'}</div>
-          <div className="team-name">{liveData?.bowling_team || 'Team B'}</div>
+          <div className="team-logo">{team2Short.charAt(0)}</div>
+          <div className="team-name">{team2Name}</div>
+          <div className="team-short">{team2Short}</div>
         </div>
       </div>
 
-      {liveData?.last_ball && (
+      {matchInfo?.last_ball && (
         <div className="last-ball-info">
           <span className="last-ball-label">Last Ball:</span>
-          <span className="last-ball-text">{liveData.last_ball}</span>
+          <span className="last-ball-text">{matchInfo.last_ball}</span>
+        </div>
+      )}
+
+      {matchInfo?.prediction_quality && (
+        <div className="prediction-quality">
+          <span className="quality-label">Prediction Quality:</span>
+          <span className={`quality-value ${matchInfo.prediction_quality}`}>
+            {matchInfo.prediction_quality === 'improving' ? '🔄 Improving' : '⏳ Developing'}
+          </span>
         </div>
       )}
     </div>
@@ -125,18 +165,18 @@ function BallHistory({ recentOvers }) {
         <div className="overs-list">
           {recentOvers.slice(-5).reverse().map((over, overIdx) => (
             <div key={overIdx} className="over-item">
-              <div className="over-label">Ov {over.overNumber}</div>
+              <div className="over-label">Ov {over.overNumber || over.over}</div>
               <div className="balls-row">
-                {over.balls.map((ball, ballIdx) => (
+                {(over.balls || over.balls || []).map((ball, ballIdx) => (
                   <div
                     key={ballIdx}
                     className={`ball-ball ${getBallClass(ball)}`}
                   >
-                    {ball === 'Wicket' ? 'W' : ball === 'Dot' ? '0' : ball}
+                    {ball === 'Wicket' || ball === 'W' ? 'W' : (ball === 'Dot' || ball === '0') ? '0' : ball}
                   </div>
                 ))}
               </div>
-              <div className="over-runs">{over.runs} runs</div>
+              <div className="over-runs">{over.runs || over.total_runs} runs</div>
             </div>
           ))}
         </div>
@@ -148,11 +188,199 @@ function BallHistory({ recentOvers }) {
 }
 
 function getBallClass(ball) {
-  if (ball === 'Wicket') return 'wicket-ball';
+  if (ball === 'Wicket' || ball === 'W') return 'wicket-ball';
   if (ball === '6') return 'six-ball';
   if (ball === '4') return 'four-ball';
-  if (ball === 'Dot') return 'dot-ball';
+  if (ball === 'Dot' || ball === '0') return 'dot-ball';
   return 'run-ball';
+}
+
+
+// Stats Panel
+function StatsPanel({ liveData }) {
+  return (
+    <div className="stats-panel">
+      <div className="stats-header">Match Statistics</div>
+      <div className="stats-grid">
+        <div className="stat-item">
+          <span className="stat-label">Run Rate</span>
+          <span className="stat-value">{liveData?.current_run_rate || liveData?.run_rate || '0.00'}</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Batsman SR</span>
+          <span className="stat-value">{liveData?.batsman_strike_rate || '0'}</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Bowler Eco</span>
+          <span className="stat-value">{liveData?.bowler_economy || '0.0'}</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Powerplay</span>
+          <span className="stat-value">{liveData?.is_powerplay ? 'Yes' : 'No'}</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Death Overs</span>
+          <span className="stat-value">{liveData?.is_death ? 'Yes' : 'No'}</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Confidence</span>
+          <span className="stat-value">{liveData?.confidence || '0'}%</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Live Match Predictions Panel (with real team names)
+function LivePredictionsPanel({ predictionData, matchInfo }) {
+  if (!predictionData) {
+    return (
+      <div className="live-predictions-panel">
+        <div className="predictions-header">
+          <span>Match Predictions</span>
+          <span className="live-badge">LIVE</span>
+        </div>
+        <div className="no-prediction">
+          <div className="loading-spinner">⏳</div>
+          <p>Waiting for live match data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { predictions, most_likely, confidence } = predictionData;
+  const team1 = matchInfo?.team_1 || 'Team A';
+  const team2 = matchInfo?.team_2 || 'Team B';
+
+  return (
+    <div className="live-predictions-panel">
+      <div className="predictions-header">
+        <span>Live Match Predictions</span>
+        <span className={`confidence-badge ${confidence > 70 ? 'high' : confidence > 50 ? 'medium' : 'low'}`}>
+          {confidence}% confidence
+        </span>
+      </div>
+
+      <div className="prediction-teams">
+        <div className="pred-team-a">
+          <div className="team-label">{team1}</div>
+          <div className="team-predictions">
+            <div className="team-pred-row">
+              <span className="pred-label">Big Win</span>
+              <div className="pred-bar-container">
+                <div className="pred-bar team-a-bar" style={{ width: `${predictions?.A_big || 0}%` }} />
+              </div>
+              <span className="pred-value">{(predictions?.A_big || 0).toFixed(1)}%</span>
+            </div>
+            <div className="team-pred-row">
+              <span className="pred-label">Small Win</span>
+              <div className="pred-bar-container">
+                <div className="pred-bar team-a-small-bar" style={{ width: `${predictions?.A_small || 0}%` }} />
+              </div>
+              <span className="pred-value">{(predictions?.A_small || 0).toFixed(1)}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="vs-marker">VS</div>
+
+        <div className="pred-team-b">
+          <div className="team-label">{team2}</div>
+          <div className="team-predictions">
+            <div className="team-pred-row">
+              <span className="pred-label">Big Win</span>
+              <div className="pred-bar-container">
+                <div className="pred-bar team-b-bar" style={{ width: `${predictions?.B_big || 0}%` }} />
+              </div>
+              <span className="pred-value">{(predictions?.B_big || 0).toFixed(1)}%</span>
+            </div>
+            <div className="team-pred-row">
+              <span className="pred-label">Small Win</span>
+              <div className="pred-bar-container">
+                <div className="pred-bar team-b-small-bar" style={{ width: `${predictions?.B_small || 0}%` }} />
+              </div>
+              <span className="pred-value">{(predictions?.B_small || 0).toFixed(1)}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="most-likely-result">
+        <span className="result-label">Most Likely Result:</span>
+        <span className={`result-value ${getResultClass(most_likely)}`}>
+          {formatResult(most_likely, team1, team2)}
+        </span>
+      </div>
+
+      <div className="model-info">
+        <span className="model-rating">{predictionData.model_rating || 'Model: 4.55/5'}</span>
+        <span className="quality-indicator">{predictionData.prediction_quality || 'Developing'}</span>
+      </div>
+    </div>
+  );
+}
+
+function formatResult(result, team1, team2) {
+  if (!result) return 'Unknown';
+  if (result === 'A_big') return `${team1} to win big`;
+  if (result === 'A_small') return `${team1} to win small`;
+  if (result === 'B_big') return `${team2} to win big`;
+  if (result === 'B_small') return `${team2} to win small`;
+  return result;
+}
+
+function getResultClass(result) {
+  if (result === 'A_big' || result === 'A_small') return 'team-a-win';
+  if (result === 'B_big' || result === 'B_small') return 'team-b-win';
+  return '';
+}
+
+// Toss Prediction Panel
+function TossPredictionPanel({ tossData }) {
+  const isWaiting = tossData?.status === 'waiting';
+  const isMatchStarted = tossData?.status === 'match_started';
+
+  return (
+    <div className="toss-prediction-panel">
+      <div className="toss-header">
+        <span>🎲 Toss Prediction</span>
+        <span className={`toss-status ${isWaiting ? 'waiting' : isMatchStarted ? 'started' : 'available'}`}>
+          {isWaiting ? '⏳ WAITING' : isMatchStarted ? '🔴 MATCH STARTED' : '✅ READY'}
+        </span>
+      </div>
+
+      {isMatchStarted ? (
+        <div className="toss-unavailable">
+          <div className="unavailable-icon">🚫</div>
+          <p>Toss prediction disabled - match already in progress</p>
+        </div>
+      ) : isWaiting ? (
+        <div className="toss-waiting">
+          <div className="waiting-icon">⏰</div>
+          <p className="waiting-message">{tossData?.message}</p>
+          {tossData?.teams && (
+            <div className="matchup-preview">
+              <span className="versus">{tossData.teams.team_1}</span>
+              <span className="vs">VS</span>
+              <span className="versus">{tossData.teams.team_2}</span>
+            </div>
+          )}
+          <p className="prediction-hint">Prediction will activate at match start</p>
+          <div className="model-ready-indicator">
+            <span className="ready-dot"></span>
+            Model Ready
+          </div>
+        </div>
+      ) : (
+        <div className="toss-available">
+          <div className="toss-prediction-placeholder">
+            <div className="placeholder-icon">🎯</div>
+            <p>Enter match details to get toss prediction</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Prediction Panel Component
@@ -175,11 +403,11 @@ function PredictionPanel({ prediction, confidence, probabilities }) {
         <div className="confidence-bar">
           <div
             className="confidence-fill"
-            style={{ width: `${(confidence || 0) * 100}%` }}
+            style={{ width: `${confidence || 0}%` }}
           />
         </div>
         <div className="confidence-text">
-          {((confidence || 0) * 100).toFixed(1)}% confidence
+          {confidence || 0}% confidence
         </div>
       </div>
 
@@ -222,182 +450,95 @@ function getOutcomeBarColor(outcome) {
 }
 
 
-// Stats Panel
-function StatsPanel({ liveData }) {
-  return (
-    <div className="stats-panel">
-      <div className="stats-header">Match Statistics</div>
-      <div className="stats-grid">
-        <div className="stat-item">
-          <span className="stat-label">Run Rate</span>
-          <span className="stat-value">{liveData?.current_run_rate || '0.00'}</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-label">Batsman SR</span>
-          <span className="stat-value">{liveData?.batsman_strike_rate || '0'}</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-label">Bowler Eco</span>
-          <span className="stat-value">{liveData?.bowler_economy || '0.0'}</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-label">Powerplay</span>
-          <span className="stat-value">{liveData?.is_powerplay ? 'Yes' : 'No'}</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-label">Death Overs</span>
-          <span className="stat-value">{liveData?.is_death ? 'Yes' : 'No'}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Match Predictions Panel (Hackathon)
-function MatchPredictionsPanel({ preMatchData }) {
-  return (
-    <div className="match-predictions-panel">
-      <div className="predictions-header">
-        <span>Match Predictions</span>
-        <span className="hackathon-badge">HACKATHON</span>
-      </div>
-
-      {preMatchData?.map((match, idx) => (
-        <div key={idx} className="match-pred-item">
-          <div className="match-title">{match.match}</div>
-          <div className="venue-info">{match.venue}</div>
-
-          <div className="outcome-bars">
-            <div className="outcome-row">
-              <span className="outcome-label">{match.team_a} (Big)</span>
-              <div className="bar-wrapper">
-                <div
-                  className="bar-fill team-a"
-                  style={{ width: `${match.predictions?.A_big || 0}%` }}
-                />
-              </div>
-              <span className="bar-percent">{(match.predictions?.A_big || 0).toFixed(1)}%</span>
-            </div>
-            <div className="outcome-row">
-              <span className="outcome-label">{match.team_a} (Small)</span>
-              <div className="bar-wrapper">
-                <div
-                  className="bar-fill team-a-small"
-                  style={{ width: `${match.predictions?.A_small || 0}%` }}
-                />
-              </div>
-              <span className="bar-percent">{(match.predictions?.A_small || 0).toFixed(1)}%</span>
-            </div>
-            <div className="outcome-row">
-              <span className="outcome-label">{match.team_b} (Big)</span>
-              <div className="bar-wrapper">
-                <div
-                  className="bar-fill team-b"
-                  style={{ width: `${match.predictions?.B_big || 0}%` }}
-                />
-              </div>
-              <span className="bar-percent">{(match.predictions?.B_big || 0).toFixed(1)}%</span>
-            </div>
-            <div className="outcome-row">
-              <span className="outcome-label">{match.team_b} (Small)</span>
-              <div className="bar-wrapper">
-                <div
-                  className="bar-fill team-b-small"
-                  style={{ width: `${match.predictions?.B_small || 0}%` }}
-                />
-              </div>
-              <span className="bar-percent">{(match.predictions?.B_small || 0).toFixed(1)}%</span>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // Main App Component
 export default function App() {
+  const [currentMatch, setCurrentMatch] = useState(null);
+  const [predictionData, setPredictionData] = useState(null);
+  const [tossData, setTossData] = useState(null);
   const [liveData, setLiveData] = useState(null);
   const [prediction, setPrediction] = useState('STANDBY');
   const [confidence, setConfidence] = useState(0);
   const [probabilities, setProbabilities] = useState({});
-  const [recentOvers, setRecentOvers] = useState([]);
-  const [preMatchData, setPreMatchData] = useState([]);
+  const [recentOvers] = useState([]);
   const [activeTab, setActiveTab] = useState('live');
+  const [error, setError] = useState(null);
 
-  // Fetch pre-match predictions
+  // Fetch current live match
   useEffect(() => {
-    fetch('http://localhost:5000/api/pre-match')
-      .then(res => res.json())
-      .then(data => setPreMatchData(data))
-      .catch(err => console.error('Pre-match fetch error:', err));
-  }, []);
-
-  // Fetch live match data from backend
-  useEffect(() => {
-    const fetchLiveData = async () => {
+    const fetchCurrentMatch = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/live');
+        const response = await fetch('http://localhost:5000/api/current-match');
         const data = await response.json();
 
-        if (data.matches && data.matches.length > 0) {
-          const match = data.matches[0]; // First live match
-
-          // Extract runs and wickets from score
-          const parseScore = (score) => {
-            if (!score) return { runs: 0, wickets: 0 };
-            const parts = score.split('/');
-            return {
-              runs: parseInt(parts[0]) || 0,
-              wickets: parseInt(parts[1]) || 0
-            };
-          };
-
-          const { runs, wickets } = parseScore(match.team_1.score);
-          const over = parseFloat(match.team_1.overs || '0');
-
-          setLiveData({
-            match: `${match.team_1.name} vs ${match.team_2.name}`,
-            status: 'LIVE',
-            batting_team: match.team_1.name,
-            bowling_team: match.team_2.name,
-            runs,
-            wickets,
-            over,
-            current_run_rate: over > 0 ? ((runs / over) * 6).toFixed(2) : '0.00',
-            batsman_strike_rate: 130,
-            bowler_economy: 8.0,
-            is_powerplay: over <= 6,
-            is_death: over >= 16,
-            venue: match.venue,
-            series: match.series,
-            last_ball: match.last_ball
-          });
-
-          // Update recent overs from live data
-          if (match.recent_overs) {
-            setRecentOvers(match.recent_overs.map(o => ({
-              overNumber: o.over,
-              balls: o.balls,
-              runs: o.runs
-            })));
-          }
+        if (data.error) {
+          setError(data.error);
+          return;
         }
+
+        setCurrentMatch(data);
+        setError(null);
       } catch (err) {
-        console.error('Live fetch error:', err);
+        console.error('Current match fetch error:', err);
+        setError('Unable to connect to backend');
       }
     };
 
-    // Initial fetch
-    fetchLiveData();
-
-    // Poll every 30 seconds
-    const pollInterval = setInterval(fetchLiveData, 30000);
-
-    return () => clearInterval(pollInterval);
+    fetchCurrentMatch();
+    const interval = setInterval(fetchCurrentMatch, 30000);
+    return () => clearInterval(interval);
   }, []);
 
-  // Simulate prediction updates (keep the AI prediction logic)
+  // Fetch toss prediction status
+  useEffect(() => {
+    const fetchTossPrediction = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/toss');
+        const data = await response.json();
+        setTossData(data);
+      } catch (err) {
+        console.error('Toss prediction error:', err);
+      }
+    };
+
+    fetchTossPrediction();
+    const interval = setInterval(fetchTossPrediction, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fetch live innings predictions (only when match is in progress)
+  useEffect(() => {
+    const fetchLivePredictions = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/live/innings-predict');
+        const data = await response.json();
+
+        if (!data.error) {
+          setPredictionData(data);
+
+          // Update live data from prediction response
+          if (data.live_state) {
+            setLiveData(prev => ({
+              ...prev,
+              ...data.live_state,
+              batting_team: data.match_info?.team_1,
+              bowling_team: data.match_info?.team_2,
+              current_run_rate: data.live_state?.run_rate || data.live_state?.current_run_rate,
+              confidence: data.confidence
+            }));
+          }
+        }
+      } catch (err) {
+        console.error('Live predictions error:', err);
+      }
+    };
+
+    // Poll every 10 seconds for live predictions
+    fetchLivePredictions();
+    const interval = setInterval(fetchLivePredictions, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Simulate prediction updates
   useEffect(() => {
     const outcomes = ['Dot', '1', '2', '4', '6', 'Wicket'];
 
@@ -415,12 +556,30 @@ export default function App() {
       const probs = generateProbs();
       const bestProb = Object.entries(probs).sort((a, b) => b[1] - a[1])[0];
       setPrediction(bestProb[0]);
-      setConfidence(bestProb[1]);
+      setConfidence(Math.round(bestProb[1] * 100));
       setProbabilities(probs);
     }, 5000);
 
     return () => clearInterval(interval);
   }, []);
+
+  // Prepare match info for child components
+  const matchInfo = predictionData?.match_info || {
+    team_1: currentMatch?.team_1_name || currentMatch?.batting_team || 'Team A',
+    team_2: currentMatch?.team_2_name || currentMatch?.bowling_team || 'Team B',
+    venue: currentMatch?.venue || 'Unknown',
+    series: currentMatch?.series || 'IPL 2026',
+    innings: currentMatch?.innings || 1,
+    team_1_runs: currentMatch?.team_1_score?.split('/')[0] || predictionData?.live_state?.team_1_score?.split('/')[0] || 0,
+    team_1_wickets: currentMatch?.team_1_score?.split('/')[1] || predictionData?.live_state?.team_1_score?.split('/')[1] || 0,
+    team_1_overs: currentMatch?.team_1_overs || predictionData?.live_state?.team_1_overs || 0,
+    team_2_runs: currentMatch?.team_2_score?.split('/')[0] || predictionData?.live_state?.team_2_score?.split('/')[0] || 0,
+    team_2_wickets: currentMatch?.team_2_score?.split('/')[1] || predictionData?.live_state?.team_2_score?.split('/')[1] || 0,
+    team_2_overs: currentMatch?.team_2_overs || predictionData?.live_state?.team_2_overs || 0,
+    target: predictionData?.live_state?.target,
+    last_ball: currentMatch?.last_ball,
+    prediction_quality: predictionData?.prediction_quality
+  };
 
   return (
     <div className="dashboard-container">
@@ -430,14 +589,21 @@ export default function App() {
           <div className="logo">🏏</div>
           <div className="brand">
             <span className="brand-name">IPL PREDICTOR</span>
-            <span className="brand-tag">AI POWERED</span>
+            <span className="brand-tag">LIVE AI</span>
           </div>
         </div>
         <div className="header-center">
-          <div className="live-badge">
-            <span className="live-dot"></span>
-            LIVE
-          </div>
+          {currentMatch ? (
+            <div className="current-match-badge">
+              <span className="live-dot"></span>
+              {matchInfo.team_1} vs {matchInfo.team_2}
+            </div>
+          ) : (
+            <div className="live-badge">
+              <span className="live-dot"></span>
+              NO LIVE MATCH
+            </div>
+          )}
         </div>
         <div className="header-right">
           <div className="model-status">
@@ -446,6 +612,13 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="error-banner">
+          <span>⚠️ {error}</span>
+        </div>
+      )}
 
       {/* Tab Navigation */}
       <nav className="tab-nav">
@@ -462,10 +635,10 @@ export default function App() {
           📊 Predictions
         </button>
         <button
-          className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
-          onClick={() => setActiveTab('history')}
+          className={`tab-btn ${activeTab === 'toss' ? 'active' : ''}`}
+          onClick={() => setActiveTab('toss')}
         >
-          📜 History
+          🎲 Toss
         </button>
       </nav>
 
@@ -474,13 +647,13 @@ export default function App() {
         {activeTab === 'live' && (
           <>
             {/* Score Card */}
-            <ScoreCard liveData={liveData} />
+            <ScoreCard liveData={liveData} matchInfo={matchInfo} />
 
             <div className="content-grid">
               {/* Left Column */}
               <div className="left-column">
+                <LivePredictionsPanel predictionData={predictionData} matchInfo={matchInfo} />
                 <BallHistory recentOvers={recentOvers} />
-                <StatsPanel liveData={liveData} />
               </div>
 
               {/* Center - 3D Pitch */}
@@ -512,6 +685,7 @@ export default function App() {
                   confidence={confidence}
                   probabilities={probabilities}
                 />
+                <StatsPanel liveData={liveData} />
               </div>
             </div>
           </>
@@ -520,19 +694,21 @@ export default function App() {
         {activeTab === 'predictions' && (
           <div className="predictions-tab">
             <div className="predictions-title">
-              <h2>🏆 Hackathon Match Predictions</h2>
-              <p>AI-powered predictions for upcoming IPL matches</p>
+              <h2>🏆 Live Match Predictions</h2>
+              <p>AI-powered predictions using current innings data</p>
             </div>
-            <MatchPredictionsPanel preMatchData={preMatchData} />
+            <LivePredictionsPanel predictionData={predictionData} matchInfo={matchInfo} />
+            <StatsPanel liveData={liveData} />
           </div>
         )}
 
-        {activeTab === 'history' && (
-          <div className="history-tab">
-            <div className="history-title">
-              <h2>📜 Match History</h2>
+        {activeTab === 'toss' && (
+          <div className="toss-tab">
+            <div className="toss-title">
+              <h2>🎲 Toss Prediction</h2>
+              <p>Predict toss winner before match starts</p>
             </div>
-            <BallHistory recentOvers={recentOvers} />
+            <TossPredictionPanel tossData={tossData} />
           </div>
         )}
       </main>
@@ -544,6 +720,8 @@ export default function App() {
         <span>Model Rating: 4.55/5</span>
         <span>|</span>
         <span>Accuracy: 57%</span>
+        <span>|</span>
+        <span>Prediction Quality: {predictionData?.prediction_quality || 'Loading...'}</span>
       </footer>
     </div>
   );
