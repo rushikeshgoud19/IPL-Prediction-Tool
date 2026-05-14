@@ -1,0 +1,49 @@
+match_id,team_a,team_b,winner,margin,actual_outcome
+1473488,Gujarat Titans,Sunrisers Hyderabad,Gujarat Titans,38 runs,A_big
+1473489,Royal Challengers Bengaluru,Chennai Super Kings,Royal Challengers Bengaluru,2 runs,A_small
+1473490,Kolkata Knight Riders,Rajasthan Royals,Kolkata Knight Riders,1 runs,A_small
+1473491,Punjab Kings,Lucknow Super Giants,Punjab Kings,37 runs,A_big
+1473492,Delhi Capitals,nan,,unknown,
+1473493,Mumbai Indians,Gujarat Titans,Gujarat Titans,3 wickets,B_small
+1473494,Kolkata Knight Riders,Chennai Super Kings,Chennai Super Kings,2 wickets,B_small
+1473495,Punjab Kings,nan,,unknown,
+1473497,Punjab Kings,Rajasthan Royals,Punjab Kings,10 runs,A_small
+1473498,Delhi Capitals,Gujarat Titans,Gujarat Titans,10 wickets,B_big
+1473499,Lucknow Super Giants,Sunrisers Hyderabad,Sunrisers Hyderabad,6 wickets,B_big
+1473500,Chennai Super Kings,Rajasthan Royals,Rajasthan Royals,6 wickets,B_big
+1473501,Mumbai Indians,Delhi Capitals,Mumbai Indians,59 runs,A_big
+1473502,Lucknow Super Giants,Gujarat Titans,Lucknow Super Giants,33 runs,A_big
+1473503,Sunrisers Hyderabad,Royal Challengers Bengaluru,Sunrisers Hyderabad,42 runs,A_big
+1485779,Punjab Kings,Delhi Capitals,Delhi Capitals,6 wickets,B_big
+1473504,Chennai Super Kings,Gujarat Titans,Chennai Super Kings,83 runs,A_big
+1473505,Sunrisers Hyderabad,Kolkata Knight Riders,Sunrisers Hyderabad,110 runs,A_big
+1473506,Mumbai Indians,Punjab Kings,Punjab Kings,7 wickets,B_big
+1473507,Lucknow Super Giants,Royal Challengers Bengaluru,Royal Challengers Bengaluru,6 wickets,B_big
+1473508,Punjab Kings,Royal Challengers Bengaluru,Royal Challengers Bengaluru,8 wickets,B_big
+1473509,Mumbai Indians,Gujarat Titans,Mumbai Indians,20 runs,A_big
+1473510,Mumbai Indians,Punjab Kings,Punjab Kings,5 wickets,B_big
+1473511,Royal Challengers Bengaluru,Punjab Kings,Royal Challengers Bengaluru,6 runs,A_small
+1527674,Sunrisers Hyderabad,Royal Challengers Bengaluru,Royal Challengers Bengaluru,6 wickets,B_big
+1527675,Kolkata Knight Riders,Mumbai Indians,Mumbai Indians,6 wickets,B_big
+1527676,Chennai Super Kings,Rajasthan Royals,Rajasthan Royals,8 wickets,B_big
+1527677,Gujarat Titans,Punjab Kings,Punjab Kings,3 wickets,B_small
+1527678,Lucknow Super Giants,Delhi Capitals,Delhi Capitals,6 wickets,B_big
+1527679,Sunrisers Hyderabad,Kolkata Knight Riders,Sunrisers Hyderabad,65 runs,A_big
+1527680,Chennai Super Kings,Punjab Kings,Punjab Kings,5 wickets,B_big
+1527681,Mumbai Indians,Delhi Capitals,Delhi Capitals,6 wickets,B_big
+1527682,Rajasthan Royals,Gujarat Titans,Rajasthan Royals,6 runs,A_small
+1527683,Sunrisers Hyderabad,Lucknow Super Giants,Lucknow Super Giants,5 wickets,B_big
+1527684,Royal Challengers Bengaluru,Chennai Super Kings,Royal Challengers Bengaluru,43 runs,A_big
+1527685,Kolkata Knight Riders,Punjab Kings,,unknown,
+1527686,Rajasthan Royals,Mumbai Indians,Rajasthan Royals,27 runs,A_big
+1527687,Gujarat Titans,Delhi Capitals,Gujarat Titans,1 runs,A_small
+1527688,Kolkata Knight Riders,Lucknow Super Giants,Lucknow Super Giants,3 wickets,B_small
+1527689,Royal Challengers Bengaluru,Rajasthan Royals,Rajasthan Royals,6 wickets,B_big
+1527690,Sunrisers Hyderabad,Punjab Kings,Punjab Kings,6 wickets,B_big
+1527691,Chennai Super Kings,Delhi Capitals,Chennai Super Kings,23 runs,A_big
+1527692,Lucknow Super Giants,Gujarat Titans,Gujarat Titans,7 wickets,B_big
+1527693,Royal Challengers Bengaluru,Mumbai Indians,Royal Challengers Bengaluru,18 runs,A_small
+1529264,Sunrisers Hyderabad,Rajasthan Royals,Sunrisers Hyderabad,57 runs,A_big
+1529265,Chennai Super Kings,Kolkata Knight Riders,Chennai Super Kings,32 runs,A_big
+1529266,Lucknow Super Giants,Royal Challengers Bengaluru,Royal Challengers Bengaluru,5 wickets,B_big
+1529267,Mumbai Indians,Punjab Kings,Punjab Kings,7 wickets,B_big
