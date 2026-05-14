@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Box, Sphere, ContactShadows } from '@react-three/drei';
 import './App.css';
@@ -66,9 +66,28 @@ export default function PredictionDashboard() {
   const [confidence, setConfidence] = useState("0.0");
   const [matchStatus, setMatchStatus] = useState("AWAITING LIVE FEED");
   
-  const [timeUntilMatch, setTimeUntilMatch] = useState("");
+  const [timeUntilMatch, setTimeUntilMatch] = useState("0h 0m 0s");
   const [preMatchData, setPreMatchData] = useState([]);
   const [liveData, setLiveData] = useState(null);
+
+  // Countdown Timer Implementation
+  useEffect(() => {
+    const matchDate = new Date("2026-05-14T19:00:00+05:30"); // 7 PM Tonight
+    const interval = setInterval(() => {
+      const now = new Date();
+      const diff = matchDate - now;
+      if (diff > 0) {
+        const h = Math.floor(diff / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((diff % (1000 * 60)) / 1000);
+        setTimeUntilMatch(`${h}h ${m}m ${s}s`);
+      } else {
+        setTimeUntilMatch("MATCH IS LIVE");
+        setMatchStatus("LIVE FEED CONNECTED");
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Fetch Pre-Match Hackathon Predictions
   useEffect(() => {
@@ -185,10 +204,22 @@ export default function PredictionDashboard() {
                 <div key={idx} className="pre-match-item">
                     <h4>{m.match}</h4>
                     <div className="prob-bars">
-                        <div className="bar-label">Team A Win (Big): {m.predictions.A_big}%</div>
-                        <div className="bar-label">Team A Win (Small): {m.predictions.A_small}%</div>
-                        <div className="bar-label">Team B Win (Big): {m.predictions.B_big}%</div>
-                        <div className="bar-label">Team B Win (Small): {m.predictions.B_small}%</div>
+                        <div className="prob-row">
+                            <div className="bar-label"><span>Team A (Big)</span> <span>{m.predictions.A_big}%</span></div>
+                            <div className="bar-container"><div className="bar-fill bg-a" style={{width: `${m.predictions.A_big}%`}}></div></div>
+                        </div>
+                        <div className="prob-row">
+                            <div className="bar-label"><span>Team A (Small)</span> <span>{m.predictions.A_small}%</span></div>
+                            <div className="bar-container"><div className="bar-fill bg-a" style={{width: `${m.predictions.A_small}%`}}></div></div>
+                        </div>
+                        <div className="prob-row">
+                            <div className="bar-label"><span>Team B (Big)</span> <span>{m.predictions.B_big}%</span></div>
+                            <div className="bar-container"><div className="bar-fill bg-b" style={{width: `${m.predictions.B_big}%`}}></div></div>
+                        </div>
+                        <div className="prob-row">
+                            <div className="bar-label"><span>Team B (Small)</span> <span>{m.predictions.B_small}%</span></div>
+                            <div className="bar-container"><div className="bar-fill bg-b" style={{width: `${m.predictions.B_small}%`}}></div></div>
+                        </div>
                     </div>
                 </div>
             ))}
